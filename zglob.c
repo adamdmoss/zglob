@@ -26,13 +26,17 @@ use or other dealings in this Software without prior written authorization
 from the Author.
 */
 #include <string.h>
-
 #include "zglob.h"
 
 /*#define TESTAPP*/
 
 /*#define zdprintf printf*/
-#define zdprintf
+
+#if __STDC_VERSION__ >= 199901L
+	#define zdprintf(...) /**/
+#else
+	#define zdprintf /**/
+#endif
 
 
 /* returns offset in haystack at which needle was found, or -1 on failure */
@@ -161,85 +165,98 @@ zglob(const char *const str,
 
 #ifdef TESTAPP
 #include <stdio.h>
+#define TESTRESULT(STR, GLOB, EXPECT) \
+	printf("%s: string=\"%s\" glob=\"%s\" expected=%d\n", \
+		((EXPECT)==zglob(STR,GLOB))?(successes++,"pass"):(failures++,"FAIL"), \
+		(STR), (GLOB), (EXPECT)	);
 int
 main(void) {
-  printf("%d / ", zglob("a", "a") );
-  printf("%d / ", zglob("a", "*") );
-  printf("%d / ", zglob("a", "*a") );
-  printf("%d / ", zglob("a", "a*") );
-  printf("%d / ", zglob("a", "**a") );
-  printf("%d / ", zglob("a", "a**") );
-  printf("%d / ", zglob("a", "**a**") );
-  printf("\n");
-  printf("%d / ", zglob("abcd", "abcd") );
-  printf("%d / ", zglob("abcd", "*bcd") );
-  printf("%d / ", zglob("abcd", "a*cd") );
-  printf("%d / ", zglob("abcd", "ab*d") );
-  printf("%d / ", zglob("abcd", "abc*") );
-  printf("\n");
-  printf("%d / ", zglob("abcd", "*abcd") );
-  printf("%d / ", zglob("abcd", "a*bcd") );
-  printf("%d / ", zglob("abcd", "ab*cd") );
-  printf("%d / ", zglob("abcd", "abc*d") );
-  printf("%d / ", zglob("abcd", "abcd*") );
-  printf("\n");
-  printf("%d / ", zglob("abcd", "*cd") );
-  printf("%d / ", zglob("abcd", "a*d") );
-  printf("%d / ", zglob("abcd", "ab*") );
-  printf("%d / ", zglob("abcd", "*abcd") );
-  printf("%d / ", zglob("abcd", "abcd*") );
-  printf("%d / ", zglob("", "") );
-  printf("\n");
-  printf("%d / ", !zglob("abcd", "abc") );
-  printf("%d / ", !zglob("abcd", "*dd") );
-  printf("%d / ", !zglob("abcd", "bcd") );
-  printf("%d / ", !zglob("", "a") );
-  printf("%d / ", !zglob("a", "") );
-  printf("\n");
-  printf("%d / ", zglob("a", "?") );
-  printf("%d / ", zglob("abcd", "????") );
-  printf("%d / ", zglob("abcd", "a???") );
-  printf("%d / ", zglob("abcd", "?b??") );
-  printf("%d / ", zglob("abcd", "??c?") );
-  printf("%d / ", zglob("abcd", "???d") );
-  printf("%d / ", zglob("abcd", "?bc?") );
-  printf("\n");
-  printf("%d / ", zglob("abcd", "a*?d") );
-  printf("%d / ", zglob("abcd", "a?*d") );
-  printf("%d / ", zglob("abc", "a*?") );
-  printf("%d / ", zglob("abc", "a?*") );
-  printf("%d / ", zglob("ab", "a*?") );
-  printf("%d / ", zglob("ab", "?*?") );
-  printf("%d / ", zglob("ab", "a?*") );
-  printf("%d / ", zglob("abc", "*?c") );
-  printf("%d / ", zglob("abc", "?*c") );
-  printf("%d / ", zglob("abc", "*b?") );
-  printf("%d / ", zglob("abc", "?b*") );
-  printf("%d / ", zglob("a", "?*") );
-  printf("%d / ", zglob("a", "*?") );
-  printf("\n");
-  printf("%d / ", !zglob("", "?") );
-  printf("%d / ", !zglob("a", "?*?") );
-  printf("%d / ", !zglob("a", "?*????????????") );
-  printf("%d / ", !zglob("abcd", "???") );
-  printf("%d / ", !zglob("abc", "????") );
-  printf("%d / ", !zglob("abc", "abc?") );
-  printf("%d / ", !zglob("abcd", "?b?") );
-  printf("%d / ", !zglob("abcd", "??c") );
-  printf("%d / ", !zglob("abcd", "??d") );
-  printf("\n");
-  /* these ones require recursion for correct results! */
-  printf("%d / ", zglob("aaabbbccc", "a*b*c") );
-  printf("%d / ", zglob("aaabbbcbc", "a*b*c") );
-  printf("%d / ", zglob("aaabbbcdc", "a*b*c") );
-  printf("%d / ", zglob("aaabbbcbcd", "a*b*cd") );
-  printf("%d / ", zglob("aaabbbcdcd", "a*b*cd") );
-  printf("%d / ", zglob("abcabcabc", "a*b*c") );
-  printf("%d / ", zglob("abbxbbcb", "a*b*") );
-  printf("%d / ", zglob("abbxbbcb", "a*b*cb") );
-  printf("%d / ", zglob("abbxbbcbb", "a*b*bb") );
-  printf("%d / ", zglob("abbxbbcbb", "a*bb*bb") );
-  printf("%d / ", zglob("a", "*?*") );
+  int successes = 0, failures = 0;
+  printf("zglob self-tests:\n");
+  TESTRESULT("a", "a", 1);
+  TESTRESULT("a", "a", 1);
+  TESTRESULT("a", "*", 1);
+  TESTRESULT("a", "*a", 1);
+  TESTRESULT("a", "a*", 1);
+  TESTRESULT("a", "**a", 1);
+  TESTRESULT("a", "a**", 1);
+  TESTRESULT("a", "**a**", 1);
 
+  TESTRESULT("abcd", "abcd", 1);
+  TESTRESULT("abcd", "*bcd", 1);
+  TESTRESULT("abcd", "a*cd", 1);
+  TESTRESULT("abcd", "ab*d", 1);
+  TESTRESULT("abcd", "abc*", 1);
+
+  TESTRESULT("abcd", "*abcd", 1);
+  TESTRESULT("abcd", "a*bcd", 1);
+  TESTRESULT("abcd", "ab*cd", 1);
+  TESTRESULT("abcd", "abc*d", 1);
+  TESTRESULT("abcd", "abcd*", 1);
+
+  TESTRESULT("abcd", "*cd", 1);
+  TESTRESULT("abcd", "a*d", 1);
+  TESTRESULT("abcd", "ab*", 1);
+  TESTRESULT("abcd", "*abcd", 1);
+  TESTRESULT("abcd", "abcd*", 1);
+  TESTRESULT("", "", 1);
+
+  TESTRESULT("abcd", "abc", 0);
+  TESTRESULT("abcd", "*dd", 0);
+  TESTRESULT("abcd", "bcd", 0);
+  TESTRESULT("", "a", 0);
+  TESTRESULT("a", "", 0);
+
+  TESTRESULT("a", "?", 1);
+  TESTRESULT("abcd", "????", 1);
+  TESTRESULT("abcd", "a???", 1);
+  TESTRESULT("abcd", "?b??", 1);
+  TESTRESULT("abcd", "??c?", 1);
+  TESTRESULT("abcd", "???d", 1);
+  TESTRESULT("abcd", "?bc?", 1);
+
+  TESTRESULT("abcd", "a*?d", 1);
+  TESTRESULT("abcd", "a?*d", 1);
+  TESTRESULT("abc", "a*?", 1);
+  TESTRESULT("abc", "a?*", 1);
+  TESTRESULT("ab", "a*?", 1);
+  TESTRESULT("ab", "?*?", 1);
+  TESTRESULT("ab", "a?*", 1);
+  TESTRESULT("abc", "*?c", 1);
+  TESTRESULT("abc", "?*c", 1);
+  TESTRESULT("abc", "*b?", 1);
+  TESTRESULT("abc", "?b*", 1);
+  TESTRESULT("a", "?*", 1);
+  TESTRESULT("a", "*?", 1);
+
+  TESTRESULT("", "?", 0);
+  TESTRESULT("a", "?*?", 0);
+  TESTRESULT("a", "?*????????????", 0);
+  TESTRESULT("abcd", "???", 0);
+  TESTRESULT("abc", "????", 0);
+  TESTRESULT("abc", "abc?", 0);
+  TESTRESULT("abcd", "?b?", 0);
+  TESTRESULT("abcd", "??c", 0);
+  TESTRESULT("abcd", "??d", 0);
+
+  /* these ones require recursion for correct results */
+  TESTRESULT("aaabbbccc", "a*b*c", 1);
+  TESTRESULT("aaabbbcbc", "a*b*c", 1);
+  TESTRESULT("aaabbbcdc", "a*b*c", 1);
+  TESTRESULT("aaabbbcbcd", "a*b*cd", 1);
+  TESTRESULT("aaabbbcdcd", "a*b*cd", 1);
+  TESTRESULT("abcabcabc", "a*b*c", 1);
+  TESTRESULT("abbxbbcb", "a*b*", 1);
+  TESTRESULT("abbxbbcb", "a*b*cb", 1);
+  TESTRESULT("abbxbbcbb", "a*b*bb", 1);
+  TESTRESULT("abbxbbcbb", "a*bb*bb", 1);
+  TESTRESULT("a", "*?*", 1);
+  printf("\n%d tests passed, %d tests failed\n", successes, failures);
+  if (failures)
+  {
+  	printf("\n*** %d TEST FAILURE(S) ***\n", failures);
+  	return 1;
+  }
+  return 0;
 }
 #endif /* TESTAPP */
